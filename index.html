@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Live Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #222; color: white; }
+        #chat-container { width: 90%; max-width: 600px; margin: 20px auto; background: #333; padding: 10px; border-radius: 10px; }
+        .chat-message { text-align: left; padding: 5px; border-bottom: 1px solid #444; }
+        .floating { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); padding: 10px; border-radius: 10px; }
+        input, button { margin: 5px; padding: 10px; font-size: 16px; }
+        #status { margin-top: 10px; font-weight: bold; }
+        .dark-mode { background: #000; color: #fff; }
+    </style>
+</head>
+<body>
+    <h1>TikTok Live Chat Reader</h1>
+    <input type="text" id="username" placeholder="Masukkan username TikTok">
+    <button onclick="connectChat()">Connect</button>
+    <button onclick="toggleDarkMode()">Mode Gelap</button>
+    <h3>Chat:</h3>
+    <div id="chat-container"></div>
+    <p id="status">Status: Menunggu koneksi...</p>
+
+    <script>
+        let socket;
+        let reconnectTimeout;
+        let pingInterval;
+        
+        function connectChat() {
+            const username = document.getElementById("username").value.trim();
+            if (!username) {
+                alert("Masukkan username TikTok!");
+                return;
+            }
+
+            socket = new WebSocket(`wss://chatlive-port3000.up.railway.app/?username=${username}`);
+
+            socket.onopen = () => {
+                document.getElementById("status").textContent = "Status: Terhubung ke " + username;
+                clearTimeout(reconnectTimeout);
+
+                pingInterval = setInterval(() => {
+                    socket.send(JSON.stringify({ type: "ping" }));
+                }, 30000);
+            };
+
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.type === "chat") {
+                    displayChat(message.user, message.text);
+                } else if (message.type === "join") {
+                    showFloatingMessage(`👤 ${message.user} bergabung!`);
+                    playSound("join.mp3");
+                } else if (message.type === "share") {
+                    showFloatingMessage(`🔄 ${message.user} membagikan live!`);
+                    playSound("share.mp3");
+                }
+            };
+
+            socket.onclose = () => {
+                clearInterval(pingInterval);
+                document.getElementById("status").textContent = "Status: Koneksi terputus!";
+                reconnectTimeout = setTimeout(connectChat, 5000);
+            };
+        }
+
+        function displayChat(user, text) {
+            const chatContainer = document.getElementById("chat-container");
+            const chatDiv = document.createElement("div");
+            chatDiv.className = "chat-message";
+            chatDiv.textContent = `${user}: ${text}`;
+            chatContainer.appendChild(chatDiv);
+        }
+
+        function showFloatingMessage(message) {
+            const floatDiv = document.createElement("div");
+            floatDiv.className = "floating";
+            floatDiv.textContent = message;
+            document.body.appendChild(floatDiv);
+            setTimeout(() => floatDiv.remove(), 3000);
+        }
+
+        function playSound(src) {
+            const audio = new Audio(src);
+            audio.play();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+        }
+    </script>
+</body>
+</html>
