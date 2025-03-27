@@ -1,0 +1,14 @@
+{
+  "name": "tiktok-live-chat",
+  "version": "1.0.0",
+  "description": "TikTok Live Chat Reader menggunakan WebSocket",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "ws": "^8.0.0",
+    "tiktok-live-connector": "^1.2.3"
+  }
+}
