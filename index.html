@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Live Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #222; color: white; }
+        #chat-container { width: 90%; max-width: 600px; margin: 20px auto; background: #333; padding: 10px; border-radius: 10px; }
+        .chat-message { text-align: left; padding: 5px; border-bottom: 1px solid #444; }
+        input, button { margin: 5px; padding: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <h1>TikTok Live Chat Reader</h1>
+    <input type="text" id="username" placeholder="Masukkan username TikTok">
+    <button onclick="connectChat()">Connect</button>
+    <h3>Chat:</h3>
+    <div id="chat-container"></div>
+
+    <script>
+        let socket;
+
+        function connectChat() {
+            const username = document.getElementById("username").value.trim();
+            if (!username) return alert("Masukkan username TikTok!");
+
+            socket = new WebSocket(`wss://${window.location.hostname}:3000/?username=${username}`);
+
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                const chatContainer = document.getElementById("chat-container");
+                const chatDiv = document.createElement("div");
+                chatDiv.className = "chat-message";
+                chatDiv.textContent = `${message.user}: ${message.text}`;
+                chatContainer.appendChild(chatDiv);
+            };
+
+            socket.onclose = () => alert("Koneksi terputus!");
+        }
+    </script>
+</body>
+</html>
