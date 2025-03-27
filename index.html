@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Live Chat Reader</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #222; color: white; }
+        #chat-container { width: 90%; max-width: 600px; margin: 20px auto; background: #333; padding: 10px; border-radius: 10px; overflow-y: auto; max-height: 300px; }
+        .chat-message { text-align: left; padding: 5px; border-bottom: 1px solid #444; }
+        input, button { margin: 5px; padding: 10px; font-size: 16px; }
+        #status { margin-top: 10px; font-weight: bold; color: orange; }
+    </style>
+</head>
+<body>
+    <h1>TikTok Live Chat Reader</h1>
+    <input type="text" id="username" placeholder="Masukkan username TikTok">
+    <button onclick="connectChat()">Connect</button>
+    <h3>Chat:</h3>
+    <div id="chat-container"></div>
+    <p id="status">Status: Belum Terhubung</p>
+
+    <script>
+        let socket;
+
+        function connectChat() {
+            const username = document.getElementById("username").value.trim();
+            if (!username) return alert("Masukkan username TikTok!");
+
+            socket = new WebSocket(`wss://${window.location.hostname}:3000/?username=${username}`);
+
+            socket.onopen = () => {
+                document.getElementById("status").textContent = "Status: Terhubung!";
+                document.getElementById("status").style.color = "green";
+            };
+
+            socket.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+
+                    if (message.error) {
+                        alert(message.error);
+                        socket.close();
+                        return;
+                    }
+
+                    if (message.status === "connected") {
+                        console.log("✅ Koneksi berhasil!");
+                        return;
+                    }
+
+                    if (message.user && message.text) {
+                        const chatContainer = document.getElementById("chat-container");
+                        const chatDiv = document.createElement("div");
+                        chatDiv.className = "chat-message";
+                        chatDiv.textContent = `${message.user}: ${message.text}`;
+                        chatContainer.appendChild(chatDiv);
+
+                        // Scroll otomatis ke bawah
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                } catch (error) {
+                    console.error("❌ Error parsing message:", error);
+                }
+            };
+
+            socket.onclose = () => {
+                document.getElementById("status").textContent = "Status: Koneksi Terputus!";
+                document.getElementById("status").style.color = "orange";
+            };
+        }
+    </script>
+</body>
+</html>
